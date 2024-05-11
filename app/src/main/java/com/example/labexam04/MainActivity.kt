@@ -7,9 +7,13 @@ import android.util.SparseBooleanArray
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import android.widget.ListView as ListView
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var toDoList: ListView
+    private lateinit var addItemEdit: EditText
+    private lateinit var errorMessageText: TextView
+    private lateinit var arrayAdapter: ArrayAdapter<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -17,13 +21,12 @@ class MainActivity : AppCompatActivity() {
 
         val addButton = findViewById<Button>(R.id.add_button)
         val deleteButton = findViewById<Button>(R.id.delete_button)
-        val updateButton = findViewById<Button>(R.id.update_button) // New update button
-        val toDoList = findViewById<ListView>(R.id.to_do_list_view)
-        val addItemEdit = findViewById<EditText>(R.id.add_item_edit)
-        val errorMessageText = findViewById<TextView>(R.id.error_message_text)
+        toDoList = findViewById(R.id.to_do_list_view)
+        addItemEdit = findViewById(R.id.add_item_edit)
+        errorMessageText = findViewById(R.id.error_message_text)
+
         val listItems = arrayListOf<String>()
-        val arrayAdapter: ArrayAdapter<String> =
-            ArrayAdapter(this, android.R.layout.select_dialog_multichoice, listItems)
+        arrayAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_multiple_choice, listItems)
         toDoList.adapter = arrayAdapter
 
         // Add item
@@ -37,11 +40,10 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "$itemText added", Toast.LENGTH_SHORT).show()
             } else {
                 errorMessageText.visibility = View.VISIBLE
-                errorMessageText.text = "Please, write something..."
-                Toast.makeText(this, "Please, fill the gap", Toast.LENGTH_SHORT).show()
+                errorMessageText.text = "Please write something..."
+                Toast.makeText(this, "Please fill in the gap", Toast.LENGTH_SHORT).show()
             }
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+            hideKeyboard()
         }
 
         // Delete item
@@ -57,28 +59,34 @@ class MainActivity : AppCompatActivity() {
             arrayAdapter.notifyDataSetChanged()
         }
 
-        // Update item
-        updateButton.setOnClickListener {
-            val selectedItemPosition = toDoList.checkedItemPosition
-            if (selectedItemPosition != ListView.INVALID_POSITION) {
-                val newItemText = addItemEdit.text.toString()
-                if (newItemText.isNotEmpty()) {
-                    listItems[selectedItemPosition] = newItemText
+        // Edit item on click
+        toDoList.setOnItemClickListener { _, _, position, _ ->
+            val alertDialogBuilder = android.app.AlertDialog.Builder(this)
+            alertDialogBuilder.setTitle("Edit Item")
+            val input = EditText(this)
+            input.setText(listItems[position])
+            alertDialogBuilder.setView(input)
+            alertDialogBuilder.setPositiveButton("Update") { dialog, _ ->
+                val editedItem = input.text.toString()
+                if (editedItem.isNotEmpty()) {
+                    listItems[position] = editedItem
                     arrayAdapter.notifyDataSetChanged()
-                    addItemEdit.setText("")
-                    errorMessageText.visibility = View.GONE
                     Toast.makeText(this, "Item updated", Toast.LENGTH_SHORT).show()
                 } else {
-                    errorMessageText.visibility = View.VISIBLE
-                    errorMessageText.text = "Please, write something..."
-                    Toast.makeText(this, "Please, fill the gap", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Please write something", Toast.LENGTH_SHORT).show()
                 }
-                toDoList.clearChoices() // Deselect item after update
-            } else {
-                Toast.makeText(this, "Please select an item to update", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
             }
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+            alertDialogBuilder.setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            val alertDialog = alertDialogBuilder.create()
+            alertDialog.show()
         }
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
     }
 }

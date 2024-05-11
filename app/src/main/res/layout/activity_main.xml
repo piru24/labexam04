@@ -60,6 +60,7 @@
         app:layout_constraintVertical_bias="0.044" />
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="357dp"
         android:layout_height="434dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -75,7 +76,9 @@
             android:choiceMode="multipleChoice"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/to_do_list_text" />
+            app:layout_constraintTop_toBottomOf="@id/to_do_list_text"/>
+
+
 
     </LinearLayout>
 
@@ -92,13 +95,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/add_item_edit" />
 
-    <Button
-        android:id="@+id/update_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/teal_700"
-        android:text="update"
-        tools:layout_editor_absoluteX="27dp"
-        tools:layout_editor_absoluteY="224dp" />
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
