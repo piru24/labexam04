@@ -1,48 +1,84 @@
 package com.example.labexam04
 
-import android.content.Intent
-import android.os.Bundle
-import android.widget.Button
-import androidx.activity.enableEdgeToEdge
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.labexam04.adapter.TaskListAdapter
-import com.example.labexam04.database.databasehelper
-import com.example.labexam04.model.TaskListModel
+import android.os.Bundle
+import android.util.SparseBooleanArray
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.*
+import android.widget.ListView as ListView
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var recycler_task: RecyclerView
-    lateinit var btn_add: Button
-    var taskListAdapter: TaskListAdapter? = null
-    var dbHandler: databasehelper? = null
-    var tasklist: List<TaskListModel> = ArrayList<TaskListModel>()
-    var linearLayoutManager: LinearLayoutManager? = null // Corrected declaration
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        recycler_task = findViewById(R.id.rv_list)
-        btn_add = findViewById(R.id.btn_add_item)
+        val addButton = findViewById<Button>(R.id.add_button)
+        val deleteButton = findViewById<Button>(R.id.delete_button)
+        val updateButton = findViewById<Button>(R.id.update_button) // New update button
+        val toDoList = findViewById<ListView>(R.id.to_do_list_view)
+        val addItemEdit = findViewById<EditText>(R.id.add_item_edit)
+        val errorMessageText = findViewById<TextView>(R.id.error_message_text)
+        val listItems = arrayListOf<String>()
+        val arrayAdapter: ArrayAdapter<String> =
+            ArrayAdapter(this, android.R.layout.select_dialog_multichoice, listItems)
+        toDoList.adapter = arrayAdapter
 
-        dbHandler = databasehelper(this)
-        fetchList()
-
-        btn_add.setOnClickListener {
-            val intent = Intent(this, AddTask::class.java)
-            startActivity(intent)
+        // Add item
+        addButton.setOnClickListener {
+            val itemText: String = addItemEdit.text.toString()
+            if (itemText.isNotEmpty()) {
+                listItems.add(itemText)
+                arrayAdapter.notifyDataSetChanged()
+                addItemEdit.setText("")
+                errorMessageText.visibility = View.GONE
+                Toast.makeText(this, "$itemText added", Toast.LENGTH_SHORT).show()
+            } else {
+                errorMessageText.visibility = View.VISIBLE
+                errorMessageText.text = "Please, write something..."
+                Toast.makeText(this, "Please, fill the gap", Toast.LENGTH_SHORT).show()
+            }
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
         }
-    }
 
-    private fun fetchList() {
-        linearLayoutManager = LinearLayoutManager(this) // Initialize LinearLayoutManager
-        tasklist = dbHandler!!.getAllTask()
-        taskListAdapter = TaskListAdapter(tasklist, applicationContext)
-        recycler_task.layoutManager = linearLayoutManager // Set LinearLayoutManager to RecyclerView
-        recycler_task.adapter = taskListAdapter
-        taskListAdapter?.notifyDataSetChanged()
+        // Delete item
+        deleteButton.setOnClickListener {
+            val position: SparseBooleanArray = toDoList.checkedItemPositions
+            val count = toDoList.count
+            for (item in count - 1 downTo 0) {
+                if (position.get(item)) {
+                    arrayAdapter.remove(listItems[item])
+                }
+            }
+            position.clear()
+            arrayAdapter.notifyDataSetChanged()
+        }
+
+        // Update item
+        updateButton.setOnClickListener {
+            val selectedItemPosition = toDoList.checkedItemPosition
+            if (selectedItemPosition != ListView.INVALID_POSITION) {
+                val newItemText = addItemEdit.text.toString()
+                if (newItemText.isNotEmpty()) {
+                    listItems[selectedItemPosition] = newItemText
+                    arrayAdapter.notifyDataSetChanged()
+                    addItemEdit.setText("")
+                    errorMessageText.visibility = View.GONE
+                    Toast.makeText(this, "Item updated", Toast.LENGTH_SHORT).show()
+                } else {
+                    errorMessageText.visibility = View.VISIBLE
+                    errorMessageText.text = "Please, write something..."
+                    Toast.makeText(this, "Please, fill the gap", Toast.LENGTH_SHORT).show()
+                }
+                toDoList.clearChoices() // Deselect item after update
+            } else {
+                Toast.makeText(this, "Please select an item to update", Toast.LENGTH_SHORT).show()
+            }
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        }
     }
 }
